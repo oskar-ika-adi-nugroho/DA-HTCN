@@ -239,33 +239,7 @@ Users should obtain each dataset from its official provider and follow the corre
 | DHA-eGCN | Full | RICH4 | Multi-model selection | **93.7** | **97.0** |
 | DHA-eGCN | Full | RICH5 | Multi-model selection | **93.7** | **97.0** |
 
-## Notes on Ensemble Selection
 
-The paper reports a post-training multi-model ensemble analysis in which each stream can select either MGCN or MAGCN before late fusion. For RICH4, there are $2^4 = 16$ possible combinations. For RICH5, there are $2^5 = 32$ possible combinations.
-
-The NTU RGB+D 60 benchmark does not provide an official validation split. Therefore, the paper interprets the 93.7% NTU RGB+D 60 result as an analysis of stream and model complementarity. For stricter deployment, the ensemble configuration should be selected using a validation subset split from the training set and then fixed before final testing.
-
-## Difference from Hyperformer
-
-This repository is derived from Hyperformer, but introduces several key extensions:
-
-1. **Differential attention**  
-   Hyperformer-style attention is extended into a two-branch differential mechanism for attention noise suppression.
-
-2. **Explicit GCN branch**  
-   DHA-eGCN adds graph convolution to complement attention-based global modeling with local topology grounding.
-
-3. **MGCN and MAGCN variants**  
-   The graph branch supports masked fixed-topology GCN and masked-adaptive GCN.
-
-4. **Full-depth graph modeling**  
-   The graph branch can be applied across all 10 layers, not only in early layers.
-
-5. **RICH4 and RICH5 feature streams**  
-   Enriched spatial and temporal skeleton features are supported for stronger stream complementarity.
-
-6. **Stream-wise model selection**  
-   Different streams may use different graph variants before score-level late fusion.
 
 ## Citation
 
