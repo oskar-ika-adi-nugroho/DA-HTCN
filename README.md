@@ -239,8 +239,6 @@ Users should obtain each dataset from its official provider and follow the corre
 | DHA-eGCN | Full | RICH4 | Multi-model selection | **93.7** | **97.0** |
 | DHA-eGCN | Full | RICH5 | Multi-model selection | **93.7** | **97.0** |
 
-
-
 ## Notes on Ensemble Selection
 
 The paper reports a post-training multi-model ensemble analysis in which each stream can select either MGCN or MAGCN before late fusion. For RICH4, there are $2^4 = 16$ possible combinations. For RICH5, there are $2^5 = 32$ possible combinations.
