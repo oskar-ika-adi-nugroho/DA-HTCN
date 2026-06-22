@@ -1,89 +1,39 @@
 # DHA-eGCN: Differential Hyperedge Attention-Enhanced Graph Convolution Network for Skeleton-Based Human Action Recognition
 
-This repository provides the reference implementation of **DHA-eGCN**, a hybrid framework for skeleton-based human action recognition. The method is based on [Hyperformer: Hypergraph Transformer for Skeleton-Based Action Recognition](https://arxiv.org/pdf/2211.09590.pdf) and extends it with differential hyperedge attention and graph convolution branches for stronger spatial modeling.
+This repository provides the reference implementation of **DHA-eGCN**, a hybrid skeleton-based human action recognition framework published in **Sensors**.
+
+DHA-eGCN is designed for recognizing human actions from 3D skeleton sequences. It combines **Differential Hyperedge Attention**, explicit **Graph Convolution Network** grounding, and **Multi-Scale Temporal Convolution** to preserve human body topology while capturing long-range spatiotemporal dependencies.
+
+The implementation is built on top of the Hyperformer codebase and extends it with differential attention, masked and adaptive graph branches, full-depth graph modeling, and enriched multi-stream skeleton features.
 
 ## Paper
-
-This repository is associated with the following paper:
 
 **DHA-eGCN: Differential Hyperedge Attention-Enhanced Graph Convolution Network for Skeleton-Based Human Action Recognition**  
 Oskar Ika Adi Nugroho and Wen-Nung Lie  
 *Sensors*, 2026, 26(12), 3932  
 DOI: [10.3390/s26123932](https://doi.org/10.3390/s26123932)  
-Paper link: [https://www.mdpi.com/1424-8220/26/12/3932](https://www.mdpi.com/1424-8220/26/12/3932)
+Paper: [https://www.mdpi.com/1424-8220/26/12/3932](https://www.mdpi.com/1424-8220/26/12/3932)
 
-Please cite the paper if you use this repository, the model design, or the experimental results in your research.
+Please cite the paper if you use this repository, the model design, or the reported experimental results.
 
-## Overview
+## Abstract-Level Summary
 
-Skeleton-based human action recognition classifies human actions from 3D joint trajectories obtained from RGB-D sensors or pose-estimation systems. Although skeleton data are compact and robust to background changes, skeleton sequences may still contain joint noise, occlusion, missing joints, and viewpoint variations.
+Skeleton-based human action recognition requires a model that can preserve the local kinematic structure of the human body while also capturing long-range dependencies across joints and time. Conventional GCN-based methods provide strong skeletal topology priors, but they can be limited by local aggregation. Attention-based methods capture global interactions, but they may also attend to noisy or weakly constrained correlations.
 
-DHA-eGCN addresses these challenges by integrating:
+DHA-eGCN addresses this problem by combining topology-aware Differential Hyperedge Attention with graph convolution and multi-scale temporal convolution. The attention module uses hop-distance relative positional encoding, hyperedge context tokens from joint-to-part pooling, and a two-branch differential attention mechanism to suppress shared noisy correlations. The graph branch provides additional spatial grounding through masked or masked-adaptive GCN variants.
 
-- **Differential Hyperedge Attention (DHA)** for topology-aware global spatial interaction
-- **Masked Graph Convolution Network (MGCN)** for stable local skeleton topology modeling
-- **Masked and Adaptive Graph Convolution Network (MAGCN)** for action-conditioned spatial relation refinement
-- **Multi-Scale Temporal Convolution (MSTCN)** for efficient temporal motion modeling
-- **Multi-stream late fusion** using standard and enriched skeleton feature streams
+The paper evaluates DHA-eGCN on **NTU RGB+D 60**, **NTU RGB+D 120**, and **Northwestern-UCLA**. The best reported configuration achieves **93.7% / 97.0%** on NTU RGB+D 60 X-Sub / X-View, **90.9% / 91.9%** on NTU RGB+D 120 X-Sub / X-Set, and **97.6%** on Northwestern-UCLA.
 
 ## Main Contributions
 
-DHA-eGCN introduces several extensions over the original Hyperformer backbone:
+- **Differential Hyperedge Attention (DHA)** combines topology-aware attention, hyperedge context, and differential attention for selective spatial modeling.
+- **MGCN and MAGCN graph branches** strengthen local skeleton topology modeling with masked graph convolution and optional sample-adaptive adjacency.
+- **Partial-GCN and full-GCN configurations** allow the graph branch to be applied only in early layers or across all ten backbone layers.
+- **RICH4 and RICH5 multi-stream representations** provide complementary spatial and temporal skeleton features.
+- **Multi-model ensemble selection** allows different streams to use different graph variants before late fusion.
+- **Missing-joint robustness analysis** shows that DHA-eMAGCN full-GCN is more stable than Hyperformer under random testing-time joint masking.
 
-1. **Differential hyperedge attention**  
-   DHA computes two structure-aware attention maps and subtracts the second map from the first one using a learnable coefficient. This design is intended to suppress shared noisy correlations and improve attention selectivity.
-
-2. **Graph-enhanced spatial modeling**  
-   DHA-eGCN adds an explicit graph convolution branch to strengthen local skeletal topology modeling. The graph branch complements the global attention branch.
-
-3. **Two graph convolution variants**  
-   The repository supports DHA-eMGCN with masked fixed-topology graph convolution and DHA-eMAGCN with masked plus adaptive graph convolution.
-
-4. **Partial-GCN and full-GCN settings**  
-   The graph branch can be applied only in early layers or in all backbone layers. The full-GCN setting keeps graph-based spatial reasoning active throughout the network.
-
-5. **Enriched multi-stream skeleton representation**  
-   The method supports standard skeleton streams and enriched RICH4 or RICH5 streams for improved feature complementarity.
-
-## Figures
-
-### Figure 1. Overall DHA-eGCN architecture
-
-![Figure 1](README_assets/Figure1.png)
-
-**Figure 1.** Overall architecture of DHA-eGCN. The network processes the input skeleton sequence through data normalization, DHA-eGCN blocks, global average pooling, and a fully connected classifier. The first four layers use DHA, GCN, and TCN, while deeper layers use DHA and TCN. Temporal downsampling is applied at layers 5 and 8.
-
-### Figure 2. DHA-eGCN block
-
-![Figure 2](README_assets/Figure2.png)
-
-**Figure 2.** Detailed DHA-eGCN block. The spatial module combines Differential Hyperedge Attention (DHA) with an optional MGCN or MAGCN branch. The output is then passed to a multi-scale TCN for temporal modeling. Residual connections are used in both spatial and temporal modules.
-
-### Figure 3. Projection and splitting for differential attention
-
-![Figure 3](README_assets/Figure3.png)
-
-**Figure 3.** Projection and splitting process in DHA. The input feature is projected into query, key, and value tensors. The query and key projections are split into two branches, producing \(Q_1, Q_2, K_1, K_2\), while the value tensor \(V\) is shared.
-
-### Figure 4. Two-branch Differential Hyperedge Attention
-
-![Figure 4](README_assets/Figure4.png)
-
-**Figure 4.** Two-branch differential attention in DHA. Each branch computes a structure-aware attention map using joint-to-joint similarity, hop-based relative positional encoding, joint-to-hyperedge interaction, and hyperedge-derived bias. The second attention map is subtracted from the first using a learnable coefficient \(\lambda\), and the result is applied to \(V\).
-
-### Figure 5. Multi-stream RICH5 framework
-
-![Figure 5](README_assets/Figure5.png)
-
-**Figure 5.** Multi-stream RICH5 framework. The input skeleton sequence is decomposed into five complementary streams: Joint (J), Edge (E), Surface (S), Motion (M), and Acceleration (A). Each stream is processed by DHA-eMGCN or DHA-eMAGCN, and the final prediction is obtained by late fusion.
-
-### Figure 6. RICH5 feature decomposition
-
-![Figure 6](README_assets/Figure6.png)
-
-**Figure 6.** RICH5 feature decomposition. The five skeleton feature streams represent joint coordinates, bone-edge vectors, surface or cross-product features, temporal motion differences, and acceleration-like second-order temporal differences.
-
-## Method Summary
+## Method Overview
 
 Given an input skeleton sequence:
 
@@ -93,112 +43,104 @@ $$
 
 where:
 
-- \(N\) is the batch size,
-- \(C\) is the coordinate channel,
-- \(T\) is the number of frames,
-- \(V\) is the number of joints,
-- \(M\) is the number of persons.
+- $N$ is the batch size,
+- $C$ is the coordinate channel,
+- $T$ is the number of frames,
+- $V$ is the number of joints,
+- $M$ is the number of persons.
 
-DHA-eGCN performs the following steps:
+DHA-eGCN follows a hierarchical spatiotemporal pipeline:
 
 1. **Input normalization and reshaping**  
-   The input skeleton tensor is normalized using batch normalization over person-joint channels. The person dimension is then merged into the batch dimension so that each person instance is processed independently by the backbone.
+   The skeleton tensor is normalized over person-joint-channel dimensions. The person dimension is merged into the batch dimension during backbone processing.
 
 2. **Spatial modeling with DHA**  
-   DHA computes structure-aware attention using hop-distance relative positional encoding, hyperedge context tokens from joint-to-part pooling, and two-branch differential attention.
+   DHA computes structure-aware attention using hop-based relative positional encoding, hyperedge context tokens, and two-branch differential attention.
 
 3. **Graph-enhanced spatial modeling**  
-   DHA-eGCN adds an explicit GCN branch to strengthen local skeletal topology modeling. Two variants are supported: DHA-eMGCN and DHA-eMAGCN.
+   A GCN branch is added to reinforce local topology-aware aggregation. The branch can be implemented as MGCN or MAGCN.
 
 4. **Temporal modeling with MSTCN**  
-   Multi-scale temporal convolution captures short-term and long-term motion patterns using multiple temporal branches with different receptive fields.
+   Multi-scale temporal convolution captures short-term and long-range motion patterns through parallel temporal branches.
 
 5. **Global pooling and classification**  
-   Features are globally averaged over the temporal and joint dimensions. For multi-person inputs, person-level features are averaged before the final linear classifier.
+   Features are globally pooled over time and joints. For multi-person inputs, person-level features are averaged before the final classifier.
 
-## Architecture Variants
+## Architecture
+
+### DHA-eGCN Block
+
+Each DHA-eGCN block contains:
+
+- a spatial module based on DHA,
+- an optional MGCN or MAGCN branch,
+- a multi-scale temporal convolution module,
+- residual connections,
+- stochastic depth through DropPath.
+
+The paper uses a 10-layer backbone. Temporal downsampling is applied at layers 5 and 8.
+
+### Differential Hyperedge Attention
+
+DHA contains three key components.
+
+#### 1. Hop-Based Relative Positional Encoding
+
+Shortest-path hop distances on the physical skeleton graph are used to inject topology-aware relative positional encoding into the attention logits. This keeps attention aligned with the human body structure.
+
+#### 2. Hyperedge Tokens from Joint-to-Part Pooling
+
+Joint features are pooled into body-part-level tokens, such as torso, left arm, right arm, left leg, and right leg. These tokens are broadcast back to their corresponding joints and used as hyperedge context in attention computation.
+
+#### 3. Differential Attention
+
+DHA computes two structure-aware attention maps. The final attention map is produced by subtracting the second map from the first using a learnable coefficient $\lambda$:
+
+$$
+S = S^{(1)} - \lambda S^{(2)}
+$$
+
+This design is intended to suppress shared noisy correlations and preserve more discriminative interactions.
+
+## Graph Branch Variants
 
 ### DHA-eMGCN
 
-**DHA-eMGCN** uses a masked graph convolution branch. It applies learnable edge-importance masks on top of fixed skeleton adjacency partitions.
-
-This variant preserves the physical structure of the human skeleton while allowing the model to emphasize task-relevant edges during training.
+DHA-eMGCN uses **Masked GCN**. It applies learnable edge-importance masks on top of fixed skeleton adjacency partitions. This preserves the physical skeleton prior while allowing the model to emphasize task-relevant edges.
 
 ### DHA-eMAGCN
 
-**DHA-eMAGCN** extends DHA-eMGCN by adding a sample-adaptive adjacency term. This adaptive adjacency is estimated from the input features and blended with the masked skeleton prior through a learnable scalar gate.
-
-This variant allows the model to capture action-conditioned relations beyond fixed physical bones.
+DHA-eMAGCN uses **Masked and Adaptive GCN**. It extends MGCN with a sample-dependent adaptive adjacency term. This allows the graph branch to capture action-conditioned relations beyond fixed physical bones.
 
 ## Graph Branch Placement
 
 ### Partial-GCN
 
-The GCN branch is applied only in layers 1 to 4.
-
-This setting emphasizes early spatial grounding while keeping deeper layers mainly attention-based.
+The graph branch is applied only in layers 1 to 4. This setting provides early spatial grounding while keeping deeper layers mainly attention-based.
 
 ### Full-GCN
 
-The GCN branch is applied in all 10 layers.
+The graph branch is applied in all 10 layers. This keeps graph-based spatial reasoning active throughout the backbone. In the paper, the full-GCN setting gives the best overall performance.
 
-This setting keeps graph-based spatial reasoning active throughout the whole backbone. In the accompanying paper, the full-GCN setting gives the best overall performance.
+## Multi-Stream Skeleton Features
 
-## Differential Hyperedge Attention
+DHA-eGCN supports both standard and enriched input streams.
 
-DHA is the main spatial attention module in DHA-eGCN. It combines three components.
-
-### 1. Hop-based relative positional encoding
-
-DHA uses shortest-path hop distances on the physical skeleton graph to inject topology-aware relative positional encoding into the attention logits.
-
-This encourages attention to remain consistent with the human skeletal structure.
-
-### 2. Hyperedge tokens through joint-to-part pooling
-
-Joint features are pooled into body-part-level tokens, such as torso, left arm, right arm, left leg, and right leg. These part-level tokens are then broadcast back to the corresponding joints.
-
-This provides higher-order body-part context for attention computation.
-
-### 3. Differential attention
-
-Instead of using a single attention map, DHA computes two structure-aware attention maps and subtracts the second one from the first one using a learnable coefficient.
-
-This design is intended to suppress shared noisy correlations and improve attention selectivity.
-
-## Multi-Scale Temporal Convolution
-
-After the spatial module, DHA-eGCN applies Multi-Scale Temporal Convolution to model temporal dynamics.
-
-The temporal module uses multiple branches with different dilation rates and pooling operations. This enables the model to capture both short-term motion details and longer-range action dynamics.
-
-Temporal downsampling is applied at layers 5 and 8.
-
-## Multi-Stream Setting
-
-DHA-eGCN supports both standard and enriched skeleton input streams.
-
-### Standard 4-stream setting
-
-The standard four-stream setting includes:
+### Standard 4-Stream Setting
 
 - Joint
 - Bone
 - Joint Motion
 - Bone Motion
 
-### Enriched RICH4 setting
-
-The enriched four-stream setting includes:
+### RICH4 Setting
 
 - **J**: Joint feature
 - **E**: Edge feature
 - **S**: Surface feature
 - **M**: Motion feature
 
-### Enriched RICH5 setting
-
-The enriched five-stream setting includes:
+### RICH5 Setting
 
 - **J**: Joint feature
 - **E**: Edge feature
@@ -206,70 +148,147 @@ The enriched five-stream setting includes:
 - **M**: Motion feature
 - **A**: Acceleration-like feature
 
-Each stream can be processed by either DHA-eMGCN or DHA-eMAGCN. The final prediction is obtained by late fusion using a weighted sum of per-stream class probabilities.
+Each stream is processed by a dedicated DHA-eGCN model. The final prediction is obtained through weighted score-level late fusion.
 
-## Difference from the Original Hyperformer
+## Figures
 
-This code is derived from the original Hyperformer implementation, but introduces several major changes.
+### Figure 1. Overall DHA-eGCN Architecture
 
-### 1. Differential Hyperedge Attention
+![Figure 1](README_assets/Figure1.png)
 
-The original Hyperformer attention is extended into a two-branch differential attention mechanism. The final attention map is obtained by subtracting one attention branch from another using a learnable coefficient.
+**Figure 1.** Overall architecture of DHA-eGCN. The model processes skeleton sequences through normalization, stacked DHA-eGCN blocks, global average pooling, and a final classifier. The partial-GCN setting applies the GCN branch only in early layers, while the full-GCN setting applies it in all layers.
 
-This is designed to reduce noisy or redundant attention responses.
+### Figure 2. DHA-eGCN Block
 
-### 2. Explicit GCN Branch
+![Figure 2](README_assets/Figure2.png)
 
-DHA-eGCN adds an explicit graph convolution branch to complement global attention with local skeleton topology modeling.
+**Figure 2.** DHA-eGCN block. The spatial module combines DHA with an optional MGCN or MAGCN branch. The temporal module uses multi-scale temporal convolution.
 
-The graph branch can be used in either partial-GCN or full-GCN mode.
+### Figure 3. Projection and Splitting for Differential Attention
 
-### 3. MGCN and MAGCN Variants
+![Figure 3](README_assets/Figure3.png)
 
-Two graph-enhanced variants are implemented:
+**Figure 3.** Input features are projected into query, key, and value tensors. Query and key tensors are split into two branches, producing $Q_1$, $Q_2$, $K_1$, and $K_2$, while $V$ is shared.
 
-- **DHA-eMGCN**: masked fixed-topology GCN
-- **DHA-eMAGCN**: masked plus adaptive GCN
+### Figure 4. Differential Hyperedge Attention
 
-### 4. Full-depth Graph Modeling
+![Figure 4](README_assets/Figure4.png)
 
-In addition to the partial-GCN setting, this repository supports the full-GCN setting, where the graph branch is applied to all ten backbone layers.
+**Figure 4.** DHA computes two structure-aware attention maps using joint-to-joint relations, hop-based RPE, joint-to-hyperedge interactions, and hyperedge-derived bias. The second map is subtracted from the first using the learnable coefficient $\lambda$.
 
-### 5. Enriched Multi-Stream Input
+### Figure 5. Multi-Stream RICH5 Framework
 
-DHA-eGCN supports enriched skeleton feature streams, including joint, edge, surface, motion, and acceleration-like representations.
+![Figure 5](README_assets/Figure5.png)
 
-### 6. Late Fusion with Stream-wise Model Selection
+**Figure 5.** RICH5 decomposes the skeleton sequence into five complementary streams: Joint, Edge, Surface, Motion, and Acceleration. Each stream is processed independently before late fusion.
 
-Different streams may use different model variants. For example, some streams may prefer DHA-eMGCN, while others may prefer DHA-eMAGCN.
+### Figure 6. RICH5 Feature Decomposition
 
-This allows stream-specific model selection before late fusion.
+![Figure 6](README_assets/Figure6.png)
 
-## Training Setting
+**Figure 6.** The five RICH5 streams encode first-order spatial features, second-order edge features, third-order surface features, motion features, and acceleration-like temporal features.
 
-The typical training configuration for NTU RGB+D 60 follows the accompanying paper:
+## Experimental Settings Reported in the Paper
+
+The paper reports the following main training settings:
 
 - Framework: PyTorch
-- Dataset: NTU RGB+D 60
-- Protocols: X-Sub and X-View
 - Epochs: 140
-- Loss: Cross-entropy
+- Loss: cross-entropy
 - Initial learning rate: 0.025
-- Learning rate decay: 0.1 at epochs 110 and 120
-- Batch size: 32
+- Learning rate decay: factor of 0.1 at epochs 110 and 120
+- Batch size: 32 for NTU RGB+D 60 and NTU RGB+D 120
 - Input sequence length: 64 frames
 - Backbone depth: 10 layers
 - Temporal downsampling: layers 5 and 8
+- GPU used in the reported experiments: NVIDIA GeForce RTX 4090
 
-## Experimental Results
+## Datasets
 
-On the NTU RGB+D 60 dataset, DHA-eGCN is evaluated under both X-Sub and X-View protocols.
+The paper evaluates DHA-eGCN on three public skeleton-based action recognition benchmarks.
 
-According to the accompanying paper, the optimized full-GCN multi-model ensemble achieves:
+| Dataset | Protocols | Notes |
+|---|---|---|
+| NTU RGB+D 60 | X-Sub, X-View | 60 action classes, 56,880 skeleton sequences |
+| NTU RGB+D 120 | X-Sub, X-Set | 120 action classes, 113,945 skeleton sequences |
+| Northwestern-UCLA | Cross-View | 10 action classes, cross-view evaluation |
 
-| Method | Stream Setting | X-Sub Top-1 | X-View Top-1 |
-|---|---:|---:|---:|
-| DHA-eGCN full-GCN | RICH4 | 93.7% | 97.0% |
+Users should obtain each dataset from its official provider and follow the corresponding license and access terms.
+
+## Main Results
+
+### Comparison with State-of-the-Art Methods
+
+| Method | Streams | NTU60 X-Sub | NTU60 X-View | NTU120 X-Sub | NTU120 X-Set | NW-UCLA |
+|---|---:|---:|---:|---:|---:|---:|
+| Hyperformer | 4 | 92.9 | 96.5 | 89.9 | 91.3 | 96.7 |
+| SelfGCN | 4 | 93.1 | 96.6 | 89.4 | 91.0 | 96.8 |
+| SkateFormer | 4 | 93.5 | 97.8 | 89.8 | 91.4 | 98.3 |
+| DHA-eGCN, RICH4 full-GCN | 4 | **93.7** | 97.0 | **90.9** | **91.9** | 97.6 |
+
+### Progressive Ablation on NTU RGB+D 60
+
+| Backbone | Graph Placement | Streams | GCN Model | X-Sub | X-View |
+|---|---|---|---|---:|---:|
+| Hyperformer | N/A | STD4 | N/A | 92.8 | 96.5 |
+| DHA-eMGCN | Partial | STD4 | MGCN | 93.1 | 96.8 |
+| DHA-eMAGCN | Partial | STD4 | MAGCN | 93.2 | 96.7 |
+| DHA-eMGCN | Full | STD4 | MGCN | 93.4 | 96.8 |
+| DHA-eMAGCN | Full | STD4 | MAGCN | 93.4 | 96.8 |
+| DHA-eMAGCN | Full | RICH5 | MAGCN | 93.6 | 96.9 |
+| DHA-eGCN | Full | RICH4 | Multi-model selection | **93.7** | **97.0** |
+| DHA-eGCN | Full | RICH5 | Multi-model selection | **93.7** | **97.0** |
+
+## Computational Complexity
+
+| Method | Stream | Params | GFLOPs | Inference Time | X-Sub | X-View |
+|---|---:|---:|---:|---:|---:|---:|
+| DHA-eMGCN partial | Joint | 9.58M | 17.81 | 9.06 ms/sample | 91.5 | 95.4 |
+| DHA-eMAGCN partial | Joint | 9.73M | 17.82 | 9.34 ms/sample | 91.6 | 95.5 |
+| DHA-eMGCN full-GCN | Joint | 11.48M | 20.84 | 10.17 ms/sample | 91.9 | 95.6 |
+| DHA-eMAGCN full-GCN | Joint | 11.96M | 20.86 | 10.94 ms/sample | 92.0 | 95.6 |
+| DHA-eGCN, RICH4 full-GCN | 4 | 46.88M | 83.40 | 42.22 ms/sample | 93.7 | 97.0 |
+
+The single-stream setting is more suitable for lower-cost deployment. The RICH4 full-GCN ensemble is preferable when recognition accuracy is prioritized.
+
+## Missing-Joint Robustness
+
+The paper also evaluates robustness under testing-time random joint masking on NTU RGB+D 60 X-Sub using the joint stream. The models are trained with clean skeleton sequences and evaluated after randomly masking 10%, 20%, or 30% of joints by setting their 3D coordinates to zero.
+
+| Model | Clean | Drop 10% | Drop 20% | Drop 30% |
+|---|---:|---:|---:|---:|
+| Hyperformer | 90.7 | 85.7 | 81.5 | 72.6 |
+| DHA-eMAGCN full-GCN | **92.0** | **88.0** | **84.6** | **77.4** |
+
+These results show that DHA-eMAGCN full-GCN is more robust to incomplete skeleton inputs, and the performance gap increases as the missing-joint ratio becomes larger.
+
+## Notes on Ensemble Selection
+
+The paper reports a post-training multi-model ensemble analysis in which each stream can select either MGCN or MAGCN before late fusion. For RICH4, there are $2^4 = 16$ possible combinations. For RICH5, there are $2^5 = 32$ possible combinations.
+
+The NTU RGB+D 60 benchmark does not provide an official validation split. Therefore, the paper interprets the 93.7% NTU RGB+D 60 result as an analysis of stream and model complementarity. For stricter deployment, the ensemble configuration should be selected using a validation subset split from the training set and then fixed before final testing.
+
+## Difference from Hyperformer
+
+This repository is derived from Hyperformer, but introduces several key extensions:
+
+1. **Differential attention**  
+   Hyperformer-style attention is extended into a two-branch differential mechanism for attention noise suppression.
+
+2. **Explicit GCN branch**  
+   DHA-eGCN adds graph convolution to complement attention-based global modeling with local topology grounding.
+
+3. **MGCN and MAGCN variants**  
+   The graph branch supports masked fixed-topology GCN and masked-adaptive GCN.
+
+4. **Full-depth graph modeling**  
+   The graph branch can be applied across all 10 layers, not only in early layers.
+
+5. **RICH4 and RICH5 feature streams**  
+   Enriched spatial and temporal skeleton features are supported for stronger stream complementarity.
+
+6. **Stream-wise model selection**  
+   Different streams may use different graph variants before score-level late fusion.
 
 ## Citation
 
@@ -277,15 +296,15 @@ If you find this repository useful, please cite:
 
 ```bibtex
 @article{nugroho2026dhaegcn,
-  title = {DHA-eGCN: Differential Hyperedge Attention-Enhanced Graph Convolution Network for Skeleton-Based Human Action Recognition},
-  author = {Nugroho, Oskar Ika Adi and Lie, Wen-Nung},
+  title   = {DHA-eGCN: Differential Hyperedge Attention-Enhanced Graph Convolution Network for Skeleton-Based Human Action Recognition},
+  author  = {Nugroho, Oskar Ika Adi and Lie, Wen-Nung},
   journal = {Sensors},
-  volume = {26},
-  number = {12},
-  pages = {3932},
-  year = {2026},
-  doi = {10.3390/s26123932},
-  url = {https://www.mdpi.com/1424-8220/26/12/3932}
+  volume  = {26},
+  number  = {12},
+  pages   = {3932},
+  year    = {2026},
+  doi     = {10.3390/s26123932},
+  url     = {https://www.mdpi.com/1424-8220/26/12/3932}
 }
 ```
 
