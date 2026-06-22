@@ -239,28 +239,7 @@ Users should obtain each dataset from its official provider and follow the corre
 | DHA-eGCN | Full | RICH4 | Multi-model selection | **93.7** | **97.0** |
 | DHA-eGCN | Full | RICH5 | Multi-model selection | **93.7** | **97.0** |
 
-## Computational Complexity
 
-| Method | Stream | Params | GFLOPs | Inference Time | X-Sub | X-View |
-|---|---:|---:|---:|---:|---:|---:|
-| DHA-eMGCN partial | Joint | 9.58M | 17.81 | 9.06 ms/sample | 91.5 | 95.4 |
-| DHA-eMAGCN partial | Joint | 9.73M | 17.82 | 9.34 ms/sample | 91.6 | 95.5 |
-| DHA-eMGCN full-GCN | Joint | 11.48M | 20.84 | 10.17 ms/sample | 91.9 | 95.6 |
-| DHA-eMAGCN full-GCN | Joint | 11.96M | 20.86 | 10.94 ms/sample | 92.0 | 95.6 |
-| DHA-eGCN, RICH4 full-GCN | 4 | 46.88M | 83.40 | 42.22 ms/sample | 93.7 | 97.0 |
-
-The single-stream setting is more suitable for lower-cost deployment. The RICH4 full-GCN ensemble is preferable when recognition accuracy is prioritized.
-
-## Missing-Joint Robustness
-
-The paper also evaluates robustness under testing-time random joint masking on NTU RGB+D 60 X-Sub using the joint stream. The models are trained with clean skeleton sequences and evaluated after randomly masking 10%, 20%, or 30% of joints by setting their 3D coordinates to zero.
-
-| Model | Clean | Drop 10% | Drop 20% | Drop 30% |
-|---|---:|---:|---:|---:|
-| Hyperformer | 90.7 | 85.7 | 81.5 | 72.6 |
-| DHA-eMAGCN full-GCN | **92.0** | **88.0** | **84.6** | **77.4** |
-
-These results show that DHA-eMAGCN full-GCN is more robust to incomplete skeleton inputs, and the performance gap increases as the missing-joint ratio becomes larger.
 
 ## Notes on Ensemble Selection
 
